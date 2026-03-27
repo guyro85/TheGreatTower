@@ -1,0 +1,18 @@
+# Claude Code tooling
+.claude/
+.claude-flow/
+CLAUDE.md
+
+# MCP config (may contain local paths)
+.mcp.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+
+# Node (if added later)
+node_modules/
