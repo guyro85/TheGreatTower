@@ -27,6 +27,14 @@
         let gameOver = false;
         let speedMult = 1;
 
+        // Platform numbering
+        let platformCounter = 0;
+
+        function createPlatform(x, y) {
+            platformCounter++;
+            return { x, y, width: 100, height: 10, number: platformCounter };
+        }
+
         // Player
         let player = {
             x: canvas.width / 2,
@@ -42,14 +50,13 @@
         // Platforms
         let platforms = [];
         function initPlatforms() {
+            platformCounter = 0;
             platforms = [];
             for (let i = 0; i < 10; i++) {
-                platforms.push({
-                    x: Math.random() * (canvas.width - 100),
-                    y: canvas.height - (100 * i) - 50,
-                    width: 100,
-                    height: 10
-                });
+                platforms.push(createPlatform(
+                    Math.random() * (canvas.width - 100),
+                    canvas.height - (100 * i) - 50
+                ));
             }
         }
         initPlatforms();
@@ -110,6 +117,8 @@
                     if (platform.y > canvas.height) {
                         platform.y = 0;
                         platform.x = Math.random() * (canvas.width - platform.width);
+                        platformCounter++;
+                        platform.number = platformCounter;
                     }
                 });
             }
@@ -159,6 +168,20 @@
             ctx.fillStyle = 'black';
             platforms.forEach(platform => {
                 ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+
+                if (platform.number % 10 === 0) {
+                    ctx.save();
+                    ctx.font = 'bold 9px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = 'black';
+                    ctx.fillStyle = 'white';
+                    const label = 'FLOOR ' + platform.number;
+                    const cx = platform.x + platform.width / 2;
+                    ctx.strokeText(label, cx, platform.y + 8);
+                    ctx.fillText(label, cx, platform.y + 8);
+                    ctx.restore();
+                }
             });
 
             // HUD
