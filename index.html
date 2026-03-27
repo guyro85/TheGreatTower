@@ -30,12 +30,32 @@
         // Platform numbering
         let platformCounter = 0;
 
+        // Bullets
+        let bullets = [];
+
+        function createEnemy(platform) {
+            if (Math.random() > 0.05) return null;
+            const roll = Math.random();
+            const type = roll < 0.5 ? 1 : roll < 0.9 ? 2 : 3;
+            return {
+                type,
+                offsetX: platform.width / 2 - 10,  // centered, relative to platform.x
+                width: 20,
+                height: 20,
+                velX: type === 2 ? 1 : 0,
+                shootTimer: 0,
+                shootInterval: 120  // frames (~2s)
+            };
+        }
+
         function createPlatform(x, y) {
             platformCounter++;
-            return {
+            const p = {
                 x, y, width: 100, height: 10, number: platformCounter,
                 standTimer: 0, isStoodOn: false, falling: false, fallSpeed: 0
             };
+            p.enemy = createEnemy(p);
+            return p;
         }
 
         // Player
@@ -85,6 +105,7 @@
             score = 0;
             gameOver = false;
             speedMult = 1;
+            bullets = [];
             player.x = canvas.width / 2;
             player.y = canvas.height - 150;
             player.velX = 0;
@@ -115,6 +136,7 @@
                 score += Math.ceil(scrollAmount * speedMult * 0.5);
                 player.y += scrollAmount;
                 platforms.forEach(p => { p.y += scrollAmount; });
+                bullets.forEach(b => { b.y += scrollAmount; });
             }
 
             // Decay speed multiplier
@@ -138,6 +160,7 @@
                     platform.isStoodOn = false;
                     platform.falling = false;
                     platform.fallSpeed = 0;
+                    platform.enemy = createEnemy(platform);
                 }
             });
 
@@ -186,14 +209,78 @@
                     platform.standTimer = 0;
                 }
             });
+
+            updateEnemies();
+            updateBullets();
+        }
+
+        function updateEnemies() {
+            platforms.forEach(platform => {
+                const e = platform.enemy;
+                if (!e) return;
+
+                // Type 2: move side to side within platform bounds
+                if (e.type === 2) {
+                    e.offsetX += e.velX;
+                    if (e.offsetX <= 0)                          { e.offsetX = 0; e.velX = 1; }
+                    if (e.offsetX + e.width >= platform.width)   { e.offsetX = platform.width - e.width; e.velX = -1; }
+                }
+
+                // Type 3: shoot toward player every shootInterval frames
+                if (e.type === 3) {
+                    e.shootTimer++;
+                    if (e.shootTimer >= e.shootInterval) {
+                        e.shootTimer = 0;
+                        const ex = platform.x + e.offsetX + e.width / 2;
+                        const ey = platform.y - e.height / 2;
+                        const dx = (player.x + player.width / 2) - ex;
+                        const dy = (player.y + player.height / 2) - ey;
+                        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                        bullets.push({ x: ex, y: ey, velX: dx / dist * 3, velY: dy / dist * 3, r: 4 });
+                    }
+                }
+
+                // Collision: player touches enemy → game over
+                const ex = platform.x + e.offsetX;
+                const ey = platform.y - e.height;
+                if (!gameOver &&
+                    player.x < ex + e.width &&
+                    player.x + player.width > ex &&
+                    player.y < ey + e.height &&
+                    player.y + player.height > ey
+                ) {
+                    gameOver = true;
+                }
+            });
+        }
+
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.x += b.velX;
+                b.y += b.velY;
+
+                // Remove if off-screen
+                if (b.x < -20 || b.x > canvas.width + 20 || b.y < -20 || b.y > canvas.height + 20) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+
+                // Collision: bullet touches player → game over
+                if (!gameOver &&
+                    player.x < b.x + b.r &&
+                    player.x + player.width > b.x - b.r &&
+                    player.y < b.y + b.r &&
+                    player.y + player.height > b.y - b.r
+                ) {
+                    gameOver = true;
+                    bullets.splice(i, 1);
+                }
+            }
         }
 
         function drawGame() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw player
-            ctx.fillStyle = 'red';
-            ctx.fillRect(player.x, player.y, player.width, player.height);
 
             // Draw platforms
             platforms.forEach(platform => {
@@ -221,6 +308,41 @@
                     ctx.restore();
                 }
             });
+
+            // Draw enemies
+            const enemyColors = { 1: '#8B0000', 2: '#CC4400', 3: '#6600CC' };
+            platforms.forEach(platform => {
+                const e = platform.enemy;
+                if (!e) return;
+                const ex = platform.x + e.offsetX;
+                const ey = platform.y - e.height;
+                ctx.fillStyle = enemyColors[e.type];
+                ctx.fillRect(ex, ey, e.width, e.height);
+                // Eyes
+                ctx.fillStyle = 'white';
+                ctx.fillRect(ex + 4, ey + 4, 4, 4);
+                ctx.fillRect(ex + 12, ey + 4, 4, 4);
+                ctx.fillStyle = 'black';
+                ctx.fillRect(ex + 5, ey + 5, 2, 2);
+                ctx.fillRect(ex + 13, ey + 5, 2, 2);
+                // Type 3: gun barrel
+                if (e.type === 3) {
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(ex + 7, ey + 14, 6, 6);
+                }
+            });
+
+            // Draw bullets
+            ctx.fillStyle = '#FF2200';
+            bullets.forEach(b => {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw player (on top)
+            ctx.fillStyle = 'red';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
 
             // HUD
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
