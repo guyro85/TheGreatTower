@@ -22,6 +22,9 @@
         const friction = 0.88;
         const baseJump = -10;
 
+        // Minimum vertical distance (px) that must separate any two platforms
+        const MIN_PLATFORM_GAP = 60;
+
         // Score & game state
         let score = 0;
         let gameOver = false;
@@ -55,22 +58,27 @@
             return 140 + Math.floor(Math.random() * 46);
         }
 
-        // Returns true if a platform at (x, y, w) overlaps any existing platform
-        function overlapsExisting(x, y, w) {
-            return platforms.some(p =>
-                Math.abs(p.y - y) < 18 &&
-                x < p.x + p.width + 4 &&
-                x + w > p.x - 4
-            );
+        // Returns true if any existing platform is within MIN_PLATFORM_GAP vertically of y
+        function tooCloseVertically(y) {
+            return platforms.some(p => Math.abs(p.y - y) < MIN_PLATFORM_GAP);
         }
 
-        // Find a non-overlapping x position for a given y and width
+        // Returns a random x for a given width (used during init where y spacing is guaranteed)
         function nonOverlapX(y, w) {
-            for (let i = 0; i < 40; i++) {
-                const x = Math.random() * Math.max(1, canvas.width - w);
-                if (!overlapsExisting(x, y, w)) return x;
-            }
             return Math.random() * Math.max(1, canvas.width - w);
+        }
+
+        // For recycled platforms: find a y (stepping up in MIN_PLATFORM_GAP increments from -10)
+        // and a random x that fits within the canvas.
+        function findRecyclePos(w) {
+            for (let i = 0; i < 30; i++) {
+                const y = -10 - i * MIN_PLATFORM_GAP;
+                if (!tooCloseVertically(y)) {
+                    return { x: Math.random() * Math.max(1, canvas.width - w), y };
+                }
+            }
+            // Fallback: park it well off-screen
+            return { x: Math.random() * Math.max(1, canvas.width - w), y: -10 - 30 * MIN_PLATFORM_GAP };
         }
 
         function createPlatform(x, y, forcedWidth) {
@@ -210,10 +218,10 @@
             platforms.forEach(platform => {
                 if (platform.y <= canvas.height + 50) return;
                 const newW = randomPlatformWidth();
-                const newX = nonOverlapX(-10, newW);
+                const pos = findRecyclePos(newW);
                 platformCounter++;
-                platform.x = newX;
-                platform.y = -10;
+                platform.x = pos.x;
+                platform.y = pos.y;
                 platform.width = newW;
                 platform.number = platformCounter;
                 platform.standTimer = 0;
