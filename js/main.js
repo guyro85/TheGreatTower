@@ -23,6 +23,7 @@ function restartGame() {
     gameOver = false;
     speedMult = 1;
     starTimer = 0;
+    cameraY = 0; // Reset cameraY
     bullets = [];
     keys.length = 0;
     player.x = canvas.width / 2;
@@ -41,14 +42,93 @@ function gameLoop(timestamp) {
     let deltaTime = timestamp - lastTime;
     lastTime = timestamp;
     if (deltaTime > 250) deltaTime = 250;
-    accumulator += deltaTime;
-    while (accumulator >= FRAME_TIME) {
-        updateGame();
-        accumulator -= FRAME_TIME;
+    
+    if (assetsLoaded) {
+        accumulator += deltaTime;
+        while (accumulator >= FRAME_TIME) {
+            updateGame();
+            accumulator -= FRAME_TIME;
+        }
+        drawGame();
+    } else {
+        // Draw loading screen
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Loading Assets...', canvas.width / 2, canvas.height / 2);
     }
-    drawGame();
+    
     requestAnimationFrame(gameLoop);
 }
 
+function loadImages(callback) {
+    const basePath = 'usedAssets/';
+    const imageFiles = {
+        'knight_idle_0': 'knight_m_idle_anim_f0.png',
+        'knight_idle_1': 'knight_m_idle_anim_f1.png',
+        'knight_idle_2': 'knight_m_idle_anim_f2.png',
+        'knight_idle_3': 'knight_m_idle_anim_f3.png',
+        'knight_run_0': 'knight_m_run_anim_f0.png',
+        'knight_run_1': 'knight_m_run_anim_f1.png',
+        'knight_run_2': 'knight_m_run_anim_f2.png',
+        'knight_run_3': 'knight_m_run_anim_f3.png',
+        'muddy_0': 'muddy_anim_f0.png',
+        'muddy_1': 'muddy_anim_f1.png',
+        'muddy_2': 'muddy_anim_f2.png',
+        'muddy_3': 'muddy_anim_f3.png',
+        'orc_idle_0': 'masked_orc_idle_anim_f0.png',
+        'orc_idle_1': 'masked_orc_idle_anim_f1.png',
+        'orc_idle_2': 'masked_orc_idle_anim_f2.png',
+        'orc_idle_3': 'masked_orc_idle_anim_f3.png',
+        'orc_run_0': 'masked_orc_run_anim_f0.png',
+        'orc_run_1': 'masked_orc_run_anim_f1.png',
+        'orc_run_2': 'masked_orc_run_anim_f2.png',
+        'orc_run_3': 'masked_orc_run_anim_f3.png',
+        'pumpkin_idle_0': 'pumpkin_dude_idle_anim_f0.png',
+        'pumpkin_idle_1': 'pumpkin_dude_idle_anim_f1.png',
+        'pumpkin_idle_2': 'pumpkin_dude_idle_anim_f2.png',
+        'pumpkin_idle_3': 'pumpkin_dude_idle_anim_f3.png',
+        'pumpkin_run_0': 'pumpkin_dude_run_anim_f0.png',
+        'pumpkin_run_1': 'pumpkin_dude_run_anim_f1.png',
+        'pumpkin_run_2': 'pumpkin_dude_run_anim_f2.png',
+        'pumpkin_run_3': 'pumpkin_dude_run_anim_f3.png',
+        'wall_left': 'wall_left.png',
+        'wall_mid': 'wall_mid.png',
+        'wall_right': 'wall_right.png',
+        'wall_hole_1': 'wall_hole_1.png',
+        'wall_hole_2': 'wall_hole_2.png'
+    };
+
+    let loadedCount = 0;
+    const totalImages = Object.keys(imageFiles).length;
+
+    for (const [key, path] of Object.entries(imageFiles)) {
+        const img = new Image();
+        img.src = basePath + path;
+        img.onload = () => {
+            loadedCount++;
+            if (loadedCount === totalImages) {
+                callback();
+            }
+        };
+        img.onerror = () => {
+            console.error('Failed to load image:', path);
+            loadedCount++;
+            if (loadedCount === totalImages) {
+                callback();
+            }
+        };
+        images[key] = img;
+    }
+}
+
+// Disable image smoothing for pixel perfect sprites
+ctx.imageSmoothingEnabled = false;
+
 initPlatforms();
+loadImages(() => {
+    assetsLoaded = true;
+});
 requestAnimationFrame(gameLoop);

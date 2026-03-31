@@ -35,3 +35,8 @@ let player = {
 
 // Platforms
 let platforms = [];
+
+// Assets and Rendering
+let cameraY = 0;
+let assetsLoaded = false;
+let images = {};

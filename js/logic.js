@@ -36,6 +36,7 @@ function updateGame() {
         speedMult = Math.min(4, speedMult + scrollAmount * 0.015);
         score += Math.ceil(scrollAmount * speedMult * 0.5);
         player.y += scrollAmount;
+        cameraY += scrollAmount; // Track camera scroll for background
         platforms.forEach(p => {
             p.y += scrollAmount;
             if (p.moving) p.moveOriginY += scrollAmount;
@@ -125,7 +126,7 @@ function updateGame() {
         if (
             player.x < platform.x + platform.width &&
             player.x + player.width > platform.x &&
-            prevPlayerBottom <= platform.y &&
+            prevPlayerBottom <= platform.y + 2 && // 2px leniency for floating point translation errors
             playerBottom >= platform.y &&
             player.velY > 0
         ) {

@@ -16,10 +16,43 @@ function drawStarShape(cx, cy, r, color) {
 function drawGame() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Draw background tiles
+    const tileSize = 32;
+    // We want the background to scroll down as the player goes up.
+    // cameraY increases as we go up.
+    // The tiles move down by (cameraY % tileSize)
+    const offsetY = Math.floor(cameraY) % tileSize;
+    
+    // Fill background with wall tiles
+    for (let y = -tileSize + offsetY; y < canvas.height; y += tileSize) {
+        // Draw left wall
+        if (images['wall_left']) ctx.drawImage(images['wall_left'], 0, y, tileSize, tileSize);
+        
+        // Draw middle walls
+        if (images['wall_mid']) {
+            const logicalRow = Math.floor((Math.floor(cameraY) - y) / tileSize);
+            for (let x = tileSize; x < canvas.width - tileSize; x += tileSize) {
+                const logicalCol = Math.floor(x / tileSize);
+                // Pseudo-random value between 0 and 1 based on row and col coordinates
+                const noise = Math.abs(Math.sin(logicalRow * 12.9898 + logicalCol * 78.233) * 43758.5453);
+                const r = noise - Math.floor(noise);
+
+                let tileToDraw = images['wall_mid'];
+                if (r > 0.95 && images['wall_hole_1']) tileToDraw = images['wall_hole_1'];
+                else if (r > 0.90 && images['wall_hole_2']) tileToDraw = images['wall_hole_2'];
+                
+                ctx.drawImage(tileToDraw, x, y, Math.min(tileSize, canvas.width - tileSize - x), tileSize);
+            }
+        }
+        
+        // Draw right wall
+        if (images['wall_right']) ctx.drawImage(images['wall_right'], canvas.width - tileSize, y, tileSize, tileSize);
+    }
+
     // Draw platforms
     platforms.forEach(platform => {
-        // Colour: falling=red, moving=steel-blue, normal=black
-        ctx.fillStyle = platform.falling ? '#FF4500' : platform.moving ? '#2255AA' : 'black';
+        // Colour: falling=Tomato, moving=Steel Blue, normal=Tan
+        ctx.fillStyle = platform.falling ? '#FF6347' : platform.moving ? '#4682B4' : '#D2B48C';
         ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
 
         // Warning bar
@@ -74,25 +107,46 @@ function drawGame() {
     });
 
     // Draw enemies
-    const enemyColors = { 1: '#8B0000', 2: '#CC4400', 3: '#6600CC' };
+    const frameIndex = Math.floor(Date.now() / 150) % 4; // 4 frame animation
     platforms.forEach(platform => {
         const e = platform.enemy;
         if (!e) return;
         const ex = platform.x + e.offsetX;
         const ey = platform.y - e.height;
-        ctx.fillStyle = enemyColors[e.type];
-        ctx.fillRect(ex, ey, e.width, e.height);
-        // Eyes
-        ctx.fillStyle = 'white';
-        ctx.fillRect(ex + 4, ey + 4, 4, 4);
-        ctx.fillRect(ex + 12, ey + 4, 4, 4);
-        ctx.fillStyle = 'black';
-        ctx.fillRect(ex + 5, ey + 5, 2, 2);
-        ctx.fillRect(ex + 13, ey + 5, 2, 2);
-        // Type 3: gun barrel
-        if (e.type === 3) {
-            ctx.fillStyle = '#333';
-            ctx.fillRect(ex + 7, ey + 14, 6, 6);
+        
+        // Ensure width/height ratio makes sense, or adjust drawn size
+        // Hitboxes are 20x20. We draw sprites slightly larger (32x32).
+        const drawSizes = 32;
+        const drawPx = ex + (e.width / 2) - (drawSizes / 2);
+        const drawPy = ey + e.height - drawSizes + 2; // +2 to let them touch the platform nicely
+
+        let spriteName = '';
+        let flip = false;
+        
+        if (e.type === 1) { // Muddy
+            spriteName = `muddy_${frameIndex}`;
+        } else if (e.type === 2) { // Masked Orc (Moves side to side)
+            flip = e.velX > 0;
+            spriteName = e.velX !== 0 ? `orc_run_${frameIndex}` : `orc_idle_${frameIndex}`;
+        } else if (e.type === 3) { // Pumpkin Dude
+            spriteName = `pumpkin_idle_${frameIndex}`;
+        }
+
+        if (images[spriteName]) {
+            if (flip) {
+                ctx.save();
+                ctx.translate(ex + e.width / 2, ey + e.height / 2);
+                ctx.scale(-1, 1);
+                ctx.drawImage(images[spriteName], -drawSizes/2, drawPy - (ey + e.height / 2), drawSizes, drawSizes);
+                ctx.restore();
+            } else {
+                ctx.drawImage(images[spriteName], drawPx, drawPy, drawSizes, drawSizes);
+            }
+        } else {
+            // Fallback
+            const enemyColors = { 1: '#8B0000', 2: '#CC4400', 3: '#6600CC' };
+            ctx.fillStyle = enemyColors[e.type] || 'purple';
+            ctx.fillRect(ex, ey, e.width, e.height);
         }
     });
 
@@ -104,9 +158,43 @@ function drawGame() {
         ctx.fill();
     });
 
-    // Draw player: flashes gold while star power is active
-    ctx.fillStyle = (starTimer > 0 && Math.floor(starTimer / 6) % 2 === 0) ? '#FFD700' : 'red';
-    ctx.fillRect(player.x, player.y, player.width, player.height);
+    // Draw player
+    const pTimer = Math.floor(Date.now() / 150) % 4;
+    const isRunning = Math.abs(player.velX) > 0.5;
+    const pSpriteName = isRunning ? `knight_run_${pTimer}` : `knight_idle_${pTimer}`;
+    
+    // Default size and drawing positions for 32x32 sprite covering a 20x20 hitbox
+    const pDrawSizes = 32;
+    const pDrawPx = player.x + (player.width / 2) - (pDrawSizes / 2);
+    // Align feet
+    const pDrawPy = player.y + player.height - pDrawSizes + 2; 
+
+    // Flashes gold while star power is active
+    if (starTimer > 0 && Math.floor(starTimer / 6) % 2 === 0) {
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(player.x + player.width/2, player.y + player.height/2, 24, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+    }
+
+    if (images[pSpriteName]) {
+        // Player turns around when moving left
+        let flipPlayer = player.velX < -0.1;
+        if (flipPlayer) {
+            ctx.save();
+            ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+            ctx.scale(-1, 1);
+            ctx.drawImage(images[pSpriteName], -pDrawSizes / 2, pDrawPy - (player.y + player.height / 2), pDrawSizes, pDrawSizes);
+            ctx.restore();
+        } else {
+            ctx.drawImage(images[pSpriteName], pDrawPx, pDrawPy, pDrawSizes, pDrawSizes);
+        }
+    } else {
+        ctx.fillStyle = (starTimer > 0 && Math.floor(starTimer / 6) % 2 === 0) ? '#FFD700' : 'red';
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
 
     // HUD
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
