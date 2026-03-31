@@ -2,6 +2,7 @@
 .claude/
 .claude-flow/
 CLAUDE.md
+.serena/
 
 # MCP config (may contain local paths)
 .mcp.json
