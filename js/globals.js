@@ -3,6 +3,7 @@ const ctx = canvas.getContext('2d');
 
 let mouseX = 0;
 let mouseY = 0;
+let selectedMenuIndex = 0; // keyboard-focused menu item
 
 const TARGET_FPS = 60;
 const FRAME_TIME = 1000 / TARGET_FPS;
@@ -35,7 +36,10 @@ let player = {
     y: canvas.height - 150,
     width: 20, height: 20,
     speed: 8, velX: 0, velY: 0,
-    jumping: false
+    jumping: false,
+    health: 3,
+    maxHealth: 3,
+    invTimer: 0  // invincibility frames after taking damage
 };
 
 // Platforms

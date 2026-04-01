@@ -1,7 +1,7 @@
 let keys = [];
 
 function handleMenuClick(clientX, clientY) {
-    if (gameState === 'PLAYING') return;
+    if (gameState === 'PLAYING' && !isPaused) return;
     
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -35,7 +35,7 @@ canvas.addEventListener('mousemove', function(e) {
 
 window.addEventListener('keydown', function(e) {
     keys[e.keyCode] = true;
-    
+
     if (gameState === 'PLAYING') {
         if ((e.keyCode === 32 || e.keyCode === 38) && !player.jumping) {
             player.jumping = true;
@@ -45,9 +45,26 @@ window.addEventListener('keydown', function(e) {
             isPaused = !isPaused;
         }
     }
-    
+
+    // Menu keyboard navigation (menus + pause screen)
+    if ((gameState !== 'PLAYING' && gameState !== 'GAME_OVER') || isPaused) {
+        if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+            e.preventDefault();
+            selectedMenuIndex = (selectedMenuIndex + 1) % Math.max(1, menuButtons.length);
+        } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+            e.preventDefault();
+            selectedMenuIndex = (selectedMenuIndex - 1 + Math.max(1, menuButtons.length)) % Math.max(1, menuButtons.length);
+        } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (menuButtons[selectedMenuIndex]) {
+                menuButtons[selectedMenuIndex].action();
+            }
+        }
+    }
+
     if ((e.key === 'r' || e.key === 'R') && gameState === 'GAME_OVER') {
         gameState = 'START_MENU';
+        selectedMenuIndex = 0;
     }
 });
 

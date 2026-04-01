@@ -18,6 +18,15 @@ function triggerGameOver() {
     }, 50);
 }
 
+function takeDamage() {
+    if (player.invTimer > 0) return; // still invincible
+    player.health--;
+    player.invTimer = 90; // 1.5 seconds of invincibility at 60fps
+    if (player.health <= 0) {
+        triggerGameOver();
+    }
+}
+
 function updateGame() {
     if (gameOver) return;
 
@@ -30,6 +39,7 @@ function updateGame() {
     player.y += player.velY;
 
     if (starTimer > 0) starTimer--;
+    if (player.invTimer > 0) player.invTimer--;
 
     // Screen scroll
     if (player.y < canvas.height / 4) {
@@ -298,7 +308,7 @@ function updateEnemies() {
             }
         }
 
-        // Collision: star power kills enemy; otherwise game over
+        // Collision: star power kills enemy; otherwise take damage
         const ex = platform.x + e.offsetX;
         const ey = platform.y - e.height;
         if (!gameOver &&
@@ -310,7 +320,7 @@ function updateEnemies() {
             if (starTimer > 0) {
                 platform.enemy = null;
             } else {
-                triggerGameOver();
+                takeDamage();
             }
         }
     });
@@ -328,14 +338,14 @@ function updateBullets() {
             continue;
         }
 
-        // Collision: bullet touches player → game over
+        // Collision: bullet touches player → take damage
         if (!gameOver &&
             player.x < b.x + b.r &&
             player.x + player.width > b.x - b.r &&
             player.y < b.y + b.r &&
             player.y + player.height > b.y - b.r
         ) {
-            triggerGameOver();
+            takeDamage();
             bullets.splice(i, 1);
         }
     }

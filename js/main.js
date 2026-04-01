@@ -25,7 +25,7 @@ function restartGame() {
     gameState = 'PLAYING';
     speedMult = 1;
     starTimer = 0;
-    cameraY = 0; // Reset cameraY
+    cameraY = 0;
     tavernState = 0;
     tavernY = 0;
     tavernFloorY = null;
@@ -37,6 +37,8 @@ function restartGame() {
     player.velX = 0;
     player.velY = 0;
     player.jumping = false;
+    player.health = player.maxHealth;
+    player.invTimer = 0;
     initPlatforms();
 }
 
@@ -129,7 +131,15 @@ function loadImages(callback) {
         'wall_hole_1': 'wall_hole_1.png',
         'wall_hole_2': 'wall_hole_2.png',
         'tavern': 'tavern.jpg',
-        'main_menu_bg': 'MainMenuBG.jpg'
+        'main_menu_bg': 'MainMenuBG.jpg',
+        'ui_heart_full': 'ui_heart_full.png',
+        'ui_heart_empty': 'ui_heart_empty.png',
+        'wall_banner_blue': 'wall_banner_blue.png',
+        'wall_banner_red': 'wall_banner_red.png',
+        'wall_banner_yellow': 'wall_banner_yellow.png',
+        'wall_banner_green': 'wall_banner_green.png',
+        'wall_fountain_1': 'wall_fountain_top_1.png',
+        'wall_fountain_2': 'wall_fountain_top_2.png'
     };
 
     let loadedCount = 0;

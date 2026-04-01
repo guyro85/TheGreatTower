@@ -61,11 +61,15 @@ function drawTextButtons(buttons, startY, spacing) {
         const boxX = canvas.width / 2 - width / 2;
         const boxY = y - 24; // Text drawn from bottom up roughly
 
-        // Check hover
-        const isHovered = (mouseX >= boxX && mouseX <= boxX + width &&
-                           mouseY >= boxY && mouseY <= boxY + height);
+        // Check hover (mouse)
+        const isMouseHovered = (mouseX >= boxX && mouseX <= boxX + width &&
+                                mouseY >= boxY && mouseY <= boxY + height);
 
-        const drawY = isHovered ? y - 3 : y;
+        // If mouse is hovering this button, sync keyboard selection index to it
+        if (isMouseHovered) selectedMenuIndex = index;
+
+        const isSelected = isMouseHovered || selectedMenuIndex === index;
+        const drawY = isSelected ? y - 3 : y;
 
         // Define hitbox for this button
         menuButtons.push({
@@ -77,7 +81,7 @@ function drawTextButtons(buttons, startY, spacing) {
             height: height
         });
 
-        ctx.fillStyle = isHovered ? '#FFD700' : 'white';
+        ctx.fillStyle = isSelected ? '#FFD700' : 'white';
         ctx.shadowColor = 'black';
         ctx.shadowBlur = 4;
         ctx.shadowOffsetX = 2;
@@ -207,17 +211,34 @@ function drawGameplay() {
     // The tiles move down by (cameraY % tileSize)
     const offsetY = Math.floor(cameraY) % tileSize;
 
-    // Fill background with wall tiles
+    // Fill background with wall tiles + decorations
+    const wallDecorations = [
+        'wall_banner_blue', 'wall_banner_red', 'wall_banner_yellow', 'wall_banner_green',
+        'wall_fountain_1', 'wall_fountain_2'
+    ];
     for (let y = -tileSize + offsetY; y < canvas.height; y += tileSize) {
+        const logicalRow = Math.floor((Math.floor(cameraY) - y) / tileSize);
+
         // Draw left wall
         if (images['wall_left']) ctx.drawImage(images['wall_left'], 0, y, tileSize, tileSize);
 
+        // Left wall decoration (rare, skip tavern)
+        const inTavernZone = tavernState >= 1 && tavernFloorY !== null &&
+            y >= (tavernRoofY - 10) && y <= (tavernFloorY + 20);
+        if (!inTavernZone) {
+            const leftNoise = Math.abs(Math.sin(logicalRow * 47.9898 + 3.1) * 43758.5453);
+            const leftR = leftNoise - Math.floor(leftNoise);
+        if (leftR > 0.97) {
+                const decorIdx = Math.floor(leftR * 100) % wallDecorations.length;
+                const decorKey = wallDecorations[decorIdx];
+                if (images[decorKey]) ctx.drawImage(images[decorKey], 0, y, tileSize, tileSize);
+            }
+        }
+
         // Draw middle walls
         if (images['wall_mid']) {
-            const logicalRow = Math.floor((Math.floor(cameraY) - y) / tileSize);
             for (let x = tileSize; x < canvas.width - tileSize; x += tileSize) {
                 const logicalCol = Math.floor(x / tileSize);
-                // Pseudo-random value between 0 and 1 based on row and col coordinates
                 const noise = Math.abs(Math.sin(logicalRow * 12.9898 + logicalCol * 78.233) * 43758.5453);
                 const r = noise - Math.floor(noise);
 
@@ -231,6 +252,23 @@ function drawGameplay() {
 
         // Draw right wall
         if (images['wall_right']) ctx.drawImage(images['wall_right'], canvas.width - tileSize, y, tileSize, tileSize);
+
+        // Right wall decoration (rare, skip tavern)
+        if (!inTavernZone) {
+            const rightNoise = Math.abs(Math.sin(logicalRow * 83.7264 + 7.5) * 43758.5453);
+            const rightR = rightNoise - Math.floor(rightNoise);
+            if (rightR > 0.97) {
+                const decorIdx = Math.floor(rightR * 100) % wallDecorations.length;
+                const decorKey = wallDecorations[decorIdx];
+                if (images[decorKey]) {
+                    ctx.save();
+                    ctx.translate(canvas.width - tileSize + tileSize / 2, y + tileSize / 2);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(images[decorKey], -tileSize / 2, -tileSize / 2, tileSize, tileSize);
+                    ctx.restore();
+                }
+            }
+        }
     }
 
     // Draw Tavern if active
@@ -394,7 +432,19 @@ function drawGameplay() {
         ctx.fillRect(player.x, player.y, player.width, player.height);
     }
 
-    // HUD
+    // Red damage glow while invincible
+    if (player.invTimer > 0) {
+        const glowAlpha = (player.invTimer / 90) * 0.55; // fades out over the invincibility window
+        ctx.globalAlpha = glowAlpha;
+        ctx.fillStyle = '#FF0000';
+        ctx.beginPath();
+        ctx.arc(player.x + player.width / 2, player.y + player.height / 2, 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+    }
+
+    // === UI LAYER (always on top) ===
+    // HUD - Score & Speed (left side)
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fillRect(5, 5, 165, starTimer > 0 ? 75 : 55);
     ctx.fillStyle = 'white';
@@ -410,6 +460,22 @@ function drawGameplay() {
         ctx.font = 'bold 13px Pixelify Sans';
         ctx.textAlign = 'left';
         ctx.fillText(Math.ceil(starTimer / 60) + 's', 36, 69);
+    }
+
+    // HUD - Hearts (top right)
+    const heartSize = 20;
+    const heartPad = 3;
+    for (let i = 0; i < player.maxHealth; i++) {
+        const hx = canvas.width - (player.maxHealth - i) * (heartSize + heartPad) - 5;
+        const hy = 8;
+        const heartKey = i < player.health ? 'ui_heart_full' : 'ui_heart_empty';
+        if (images[heartKey]) {
+            ctx.drawImage(images[heartKey], hx, hy, heartSize, heartSize);
+        } else {
+            // Fallback: draw a simple coloured rect
+            ctx.fillStyle = i < player.health ? '#E03030' : '#555';
+            ctx.fillRect(hx, hy, heartSize, heartSize);
+        }
     }
 
     // Game over overlay
@@ -455,15 +521,25 @@ function drawGameplay() {
         ctx.fillText('Press R to return', canvas.width / 2, canvas.height - 40);
     } else if (isPaused) {
         // Pause Menu overlay
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.fillStyle = 'white';
         ctx.textAlign = 'center';
         ctx.font = 'bold 40px Pixelify Sans';
-        ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2 - 20);
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2 - 60);
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
 
-        ctx.font = '20px Pixelify Sans';
-        ctx.fillText('Press ESC to Resume', canvas.width / 2, canvas.height / 2 + 30);
+        const pauseButtons = [
+            { text: 'Resume', action: () => { isPaused = false; } },
+            { text: 'Main Menu', action: () => { isPaused = false; gameState = 'START_MENU'; selectedMenuIndex = 0; } }
+        ];
+        drawTextButtons(pauseButtons, canvas.height / 2, 55);
     }
 }
