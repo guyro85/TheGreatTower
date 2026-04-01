@@ -1,6 +1,9 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+let mouseX = 0;
+let mouseY = 0;
+
 const TARGET_FPS = 60;
 const FRAME_TIME = 1000 / TARGET_FPS;
 
@@ -14,6 +17,7 @@ const MIN_PLATFORM_GAP = 60;
 let score = 0;
 let gameOver = false;
 let isPaused = false;
+let gameState = 'START_MENU'; // 'START_MENU', 'PLAYING', 'GAME_OVER', 'HIGH_SCORES', 'OPTIONS', 'CREDITS'
 let speedMult = 1;
 let starTimer = 0; // frames of star-power remaining
 

@@ -22,6 +22,7 @@ function restartGame() {
     score = 0;
     gameOver = false;
     isPaused = false;
+    gameState = 'PLAYING';
     speedMult = 1;
     starTimer = 0;
     cameraY = 0; // Reset cameraY
@@ -72,7 +73,7 @@ function gameLoop(timestamp) {
     if (assetsLoaded) {
         accumulator += deltaTime;
         while (accumulator >= FRAME_TIME) {
-            if (!isPaused) {
+            if (gameState === 'PLAYING' && !isPaused) {
                 updateGame();
             }
             accumulator -= FRAME_TIME;
@@ -127,7 +128,8 @@ function loadImages(callback) {
         'wall_right': 'wall_right.png',
         'wall_hole_1': 'wall_hole_1.png',
         'wall_hole_2': 'wall_hole_2.png',
-        'tavern': 'tavern.jpg'
+        'tavern': 'tavern.jpg',
+        'main_menu_bg': 'MainMenuBG.jpg'
     };
 
     let loadedCount = 0;

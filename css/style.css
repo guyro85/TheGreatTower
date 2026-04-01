@@ -5,6 +5,13 @@
     font-style: normal;
 }
 
+@font-face {
+    font-family: 'alagard';
+    src: url('../usedAssets/alagard.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 body, html { 
     margin: 0; padding: 0; overflow: hidden; 
     width: 100%; height: 100%;
@@ -14,6 +21,9 @@ body, html {
     align-items: center;
     touch-action: none;
     font-family: 'Pixelify Sans', sans-serif;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: grayscale;
+    font-smooth: never;
 }
 
 #gameContainer {

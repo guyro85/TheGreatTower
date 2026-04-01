@@ -1,6 +1,7 @@
 function triggerGameOver() {
     if (gameOver) return;
     gameOver = true;
+    gameState = 'GAME_OVER';
 
     setTimeout(() => {
         if (highScores.length < 5 || score > (highScores.length > 0 ? highScores[highScores.length - 1].score : 0)) {

@@ -13,7 +13,191 @@ function drawStarShape(cx, cy, r, color) {
     ctx.fill();
 }
 
+let menuButtons = []; // Stores hitboxes for current menu text buttons
+
+function drawMenuBackground() {
+    if (images['main_menu_bg']) {
+        ctx.drawImage(images['main_menu_bg'], 0, 0, canvas.width, canvas.height);
+    } else {
+        ctx.fillStyle = '#222';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+function drawMenuTitle(title) {
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.font = '50px alagard';
+    ctx.shadowColor = 'black';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+    const lines = title.split('\n');
+    const lineHeight = 50;
+
+    // Shift up slightly to accommodate multiple lines
+    let startY = lines.length > 1 ? 110 : 140;
+
+    lines.forEach((line, i) => {
+        ctx.fillText(line, canvas.width / 2, startY + (i * lineHeight));
+    });
+
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+}
+
+function drawTextButtons(buttons, startY, spacing) {
+    menuButtons = [];
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 28px ' + (document.fonts.check('12px "Pixelify Sans"') ? 'Pixelify Sans' : 'sans-serif');
+
+    buttons.forEach((btn, index) => {
+        const y = startY + index * spacing;
+        const width = ctx.measureText(btn.text).width;
+        const height = 30; // Approximation of font height
+
+        // Base coordinate
+        const boxX = canvas.width / 2 - width / 2;
+        const boxY = y - 24; // Text drawn from bottom up roughly
+
+        // Check hover
+        const isHovered = (mouseX >= boxX && mouseX <= boxX + width &&
+                           mouseY >= boxY && mouseY <= boxY + height);
+
+        const drawY = isHovered ? y - 3 : y;
+
+        // Define hitbox for this button
+        menuButtons.push({
+            text: btn.text,
+            action: btn.action,
+            x: boxX,
+            y: boxY,
+            width: width,
+            height: height
+        });
+
+        ctx.fillStyle = isHovered ? '#FFD700' : 'white';
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        ctx.fillText(btn.text, canvas.width / 2, drawY);
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+    });
+}
+
+function drawMainMenu() {
+    drawMenuBackground();
+    drawMenuTitle('The Secret\nLies On Top');
+
+    const buttons = [
+        { text: 'Start Game', action: () => { restartGame(); } },
+        { text: 'High Scores', action: () => { gameState = 'HIGH_SCORES'; } },
+        { text: 'Options', action: () => { gameState = 'OPTIONS'; } },
+        { text: 'Credits', action: () => { gameState = 'CREDITS'; } },
+        { text: 'Quit', action: () => { location.reload(); } }
+    ];
+    drawTextButtons(buttons, 250, 45);
+
+    const pTimer = Math.floor(Date.now() / 150) % 4;
+    const spriteName = `knight_idle_${pTimer}`;
+    if (images && images[spriteName]) {
+        const drawSize = 64; // Scale up the knight for the menu!
+        const px = canvas.width / 2 - drawSize / 2;
+        const py = canvas.height - 30 - drawSize;
+        ctx.drawImage(images[spriteName], px, py, drawSize, drawSize);
+    }
+}
+
+function drawHighScoresMenu() {
+    drawMenuBackground();
+    drawMenuTitle('High Scores');
+
+    ctx.fillRect(50, 170, canvas.width - 100, 250);
+
+    let startY = 210;
+    ctx.textAlign = 'center';
+    if (highScores.length === 0) {
+        ctx.font = '20px ' + (document.fonts.check('12px "Pixelify Sans"') ? 'Pixelify Sans' : 'sans-serif');
+        ctx.fillStyle = 'white';
+        ctx.fillText('No high scores yet!', canvas.width / 2, startY);
+    } else {
+        let bestScore = highScores[0].score;
+        highScores.forEach((entry, index) => {
+            let text = `${index + 1}. ${entry.name} - ${entry.score}`;
+            if (entry.score === bestScore) {
+                ctx.font = 'bold 22px ' + (document.fonts.check('12px "Pixelify Sans"') ? 'Pixelify Sans' : 'sans-serif');
+                ctx.fillStyle = '#FFD700';
+            } else {
+                ctx.font = '20px ' + (document.fonts.check('12px "Pixelify Sans"') ? 'Pixelify Sans' : 'sans-serif');
+                ctx.fillStyle = 'white';
+            }
+            ctx.fillText(text, canvas.width / 2, startY + (index * 40));
+        });
+    }
+
+    const buttons = [{ text: 'Back', action: () => { gameState = 'START_MENU'; } }];
+    drawTextButtons(buttons, 470, 45);
+}
+
+function drawOptionsMenu() {
+    drawMenuBackground();
+    drawMenuTitle('Options');
+
+    ctx.fillRect(50, 170, canvas.width - 100, 200);
+
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.font = '20px ' + (document.fonts.check('12px "Pixelify Sans"') ? 'Pixelify Sans' : 'sans-serif');
+    ctx.fillText('Music: On', canvas.width / 2, 220);
+    ctx.fillText('SFX: On', canvas.width / 2, 270);
+    ctx.fillText('Controls: Keyboard/Touch', canvas.width / 2, 320);
+
+    const buttons = [{ text: 'Back', action: () => { gameState = 'START_MENU'; } }];
+    drawTextButtons(buttons, 470, 45);
+}
+
+function drawCreditsMenu() {
+    drawMenuBackground();
+    drawMenuTitle('Credits');
+
+    ctx.fillRect(50, 170, canvas.width - 100, 200);
+
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.font = '20px ' + (document.fonts.check('12px "Pixelify Sans"') ? 'Pixelify Sans' : 'sans-serif');
+    ctx.fillText('Created by:', canvas.width / 2, 210);
+    ctx.font = 'bold 24px ' + (document.fonts.check('12px "Pixelify Sans"') ? 'Pixelify Sans' : 'sans-serif');
+    ctx.fillStyle = '#FFD700';
+    ctx.fillText('Bigfoot Studios', canvas.width / 2, 250);
+
+    ctx.fillStyle = 'white';
+    ctx.font = '16px ' + (document.fonts.check('12px "Pixelify Sans"') ? 'Pixelify Sans' : 'sans-serif');
+    ctx.fillText('Art & Programming: Guy', canvas.width / 2, 300);
+    ctx.fillText('Music: TBA', canvas.width / 2, 330);
+
+    const buttons = [{ text: 'Back', action: () => { gameState = 'START_MENU'; } }];
+    drawTextButtons(buttons, 470, 45);
+}
+
 function drawGame() {
+    if (gameState === 'START_MENU') {
+        drawMainMenu();
+    } else if (gameState === 'HIGH_SCORES') {
+        drawHighScoresMenu();
+    } else if (gameState === 'OPTIONS') {
+        drawOptionsMenu();
+    } else if (gameState === 'CREDITS') {
+        drawCreditsMenu();
+    } else {
+        drawGameplay();
+    }
+}
+
+function drawGameplay() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw background tiles
@@ -268,7 +452,7 @@ function drawGame() {
 
         ctx.font = '15px Pixelify Sans';
         ctx.fillStyle = '#ccc';
-        ctx.fillText('Press R to restart', canvas.width / 2, canvas.height - 40);
+        ctx.fillText('Press R to return', canvas.width / 2, canvas.height - 40);
     } else if (isPaused) {
         // Pause Menu overlay
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
