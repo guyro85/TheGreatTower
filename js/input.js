@@ -13,6 +13,7 @@ function handleMenuClick(clientX, clientY) {
     if (gameState === 'START_MENU' && window.skinLeftArrowRect && window.skinRightArrowRect) {
         let lRect = window.skinLeftArrowRect;
         if (x >= lRect.x && x <= lRect.x + lRect.w && y >= lRect.y && y <= lRect.y + lRect.h) {
+            playSound(sfxBlip);
             let idx = ownedSkins.indexOf(currentSkinId);
             idx = (idx - 1 + ownedSkins.length) % ownedSkins.length;
             currentSkinId = ownedSkins[idx];
@@ -21,6 +22,7 @@ function handleMenuClick(clientX, clientY) {
         }
         let rRect = window.skinRightArrowRect;
         if (x >= rRect.x && x <= rRect.x + rRect.w && y >= rRect.y && y <= rRect.y + rRect.h) {
+            playSound(sfxBlip);
             let idx = ownedSkins.indexOf(currentSkinId);
             idx = (idx + 1) % ownedSkins.length;
             currentSkinId = ownedSkins[idx];
@@ -33,6 +35,7 @@ function handleMenuClick(clientX, clientY) {
         let btn = menuButtons[i];
         if (x >= btn.x && x <= btn.x + btn.width &&
             y >= btn.y && y <= btn.y + btn.height) {
+            playSound(sfxBlip);
             btn.action();
             break;
         }
@@ -58,6 +61,7 @@ window.addEventListener('keydown', function (e) {
 
     if (gameState === 'PLAYING') {
         if ((e.keyCode === 32 || e.keyCode === 38 || e.keyCode === 87) && !player.jumping) {
+            playSound(sfxJump);
             player.jumping = true;
             player.velY = baseJump - Math.abs(player.velX) * 0.5;
         }
@@ -127,12 +131,15 @@ window.addEventListener('keydown', function (e) {
         if (onOptionsPage) {
             const numOpts = 3; // Rest, His Story, Leave
             if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                playSound(sfxBlip);
                 dwarfInteractOption = (dwarfInteractOption - 1 + numOpts) % numOpts;
                 e.preventDefault();
             } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                playSound(sfxBlip);
                 dwarfInteractOption = (dwarfInteractOption + 1) % numOpts;
                 e.preventDefault();
             } else if (e.key === 'Enter') {
+                playSound(sfxBlip);
                 e.preventDefault();
                 _confirmDwarfOption();
             }
@@ -161,12 +168,15 @@ window.addEventListener('keydown', function (e) {
     if (!dwarfInteracting &&
         ((gameState !== 'PLAYING' && gameState !== 'GAME_OVER') || isPaused || gameState === 'GAME_OVER')) {
         if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+            playSound(sfxBlip);
             e.preventDefault();
             selectedMenuIndex = (selectedMenuIndex + 1) % Math.max(1, menuButtons.length);
         } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+            playSound(sfxBlip);
             e.preventDefault();
             selectedMenuIndex = (selectedMenuIndex - 1 + Math.max(1, menuButtons.length)) % Math.max(1, menuButtons.length);
         } else if (e.key === 'Enter' || e.key === ' ') {
+            playSound(sfxBlip);
             e.preventDefault();
             if (menuButtons[selectedMenuIndex]) {
                 menuButtons[selectedMenuIndex].action();
@@ -206,6 +216,7 @@ window.addEventListener('touchstart', (e) => {
     }
 
     if (gameState === 'PLAYING' && !player.jumping) {
+        playSound(sfxJump);
         player.jumping = true;
         player.velY = baseJump - Math.abs(player.velX) * 0.5;
     }

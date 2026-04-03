@@ -20,6 +20,7 @@ function triggerGameOver() {
 
 function takeDamage() {
     if (player.invTimer > 0) return; // still invincible
+    playSound(sfxHit);
     player.health--;
     player.invTimer = 90; // 1.5 seconds of invincibility at 60fps
     if (player.health <= 0) {
@@ -295,6 +296,7 @@ function updateGame() {
             if (sp) {
                 const sx = platform.x + sp.offsetX;
                 if (player.x + player.width > sx && player.x < sx + sp.width) {
+                    playSound(sfxJump);
                     player.jumping = true;
                     player.velY = -22;
                     player.y = platform.y - player.height;
@@ -321,6 +323,7 @@ function updateGame() {
                 player.y < sy + st.height &&
                 player.y + player.height > sy
             ) {
+                playSound(sfxPowerUp);
                 st.collected = true;
                 starTimer = 360; // 6 seconds at 60 fps
             }
@@ -336,6 +339,7 @@ function updateGame() {
                 player.y < cy + co.height &&
                 player.y + player.height > cy
             ) {
+                playSound(sfxCoin);
                 co.collected = true;
                 coins++;
                 localStorage.setItem('greatTowerCoins', coins.toString());

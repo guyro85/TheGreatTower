@@ -97,11 +97,25 @@ let dwarfStoryMode = false;     // true while reading the story sub-dialog
 let dwarfStoryPage = 0;         // current page of the story
 let dwarfStoryChars = 0;        // typewriter progress for story page
 
-// Background Music
+// Background Music & Audio Setup
 const bgmMenu = new Audio('usedAssets/MainMenuTheme.mp3');
 bgmMenu.loop = true;
 const bgmGame = new Audio('usedAssets/GameTheme.mp3');
 bgmGame.loop = true;
+
+// Sound Effects
+const sfxBlip = new Audio('usedAssets/blipSelect.wav');
+const sfxHit = new Audio('usedAssets/hitHurt.wav');
+const sfxJump = new Audio('usedAssets/jump.wav');
+const sfxCoin = new Audio('usedAssets/pickupCoin.wav');
+const sfxPowerUp = new Audio('usedAssets/powerUp.wav');
+
+function playSound(snd) {
+    if (snd) {
+        snd.currentTime = 0;
+        snd.play().catch(e => console.log('Audio overlap/autoplay caught:', e));
+    }
+}
 
 let currentBGM = null;
 let musicEnabled = true;
