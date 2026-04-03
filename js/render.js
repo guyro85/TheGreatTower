@@ -108,21 +108,129 @@ function drawMainMenu() {
 
     const buttons = [
         { text: 'Start Game', action: () => { restartGame(); } },
-        { text: 'High Scores', action: () => { gameState = 'HIGH_SCORES'; } },
-        { text: 'Options', action: () => { gameState = 'OPTIONS'; } },
-        { text: 'Credits', action: () => { gameState = 'CREDITS'; } },
+        { text: 'Store', action: () => { gameState = 'STORE'; selectedMenuIndex = 0; } },
+        { text: 'High Scores', action: () => { gameState = 'HIGH_SCORES'; selectedMenuIndex = 0; } },
+        { text: 'Options', action: () => { gameState = 'OPTIONS'; selectedMenuIndex = 0; } },
+        { text: 'Credits', action: () => { gameState = 'CREDITS'; selectedMenuIndex = 0; } },
         { text: 'Quit', action: () => { location.reload(); } }
     ];
-    drawTextButtons(buttons, 250, 45);
+    drawTextButtons(buttons, 200, 45);
 
     const pTimer = Math.floor(Date.now() / 150) % 4;
-    const spriteName = `knight_idle_${pTimer}`;
+    const spriteName = `${currentSkinId}_idle_${pTimer}`;
     if (images && images[spriteName]) {
-        const drawSize = 64; // Scale up the knight for the menu!
+        const drawSize = 64; 
         const px = canvas.width / 2 - drawSize / 2;
         const py = canvas.height - 30 - drawSize;
         ctx.drawImage(images[spriteName], px, py, drawSize, drawSize);
+
+        // Name of the skin above it
+        const currentSkinData = AVAILABLE_SKINS.find(s => s.id === currentSkinId);
+        ctx.font = '16px Pixelify Sans';
+        ctx.fillStyle = '#FFD700';
+        ctx.textAlign = 'center';
+        ctx.fillText(currentSkinData ? currentSkinData.name : 'Unknown', canvas.width / 2, py - 5);
+
+        // Arrows to cycle through owned skins
+        if (ownedSkins.length > 1) {
+            ctx.font = 'bold 24px Pixelify Sans';
+            ctx.fillStyle = 'white';
+            ctx.fillText('<', px - 20, py + drawSize / 2 + 10);
+            ctx.fillText('>', px + drawSize + 20, py + drawSize / 2 + 10);
+            
+            // Note: Clicks for these are handled in input.js
+            // Define hotzones globally for input.js to easily grab
+            window.skinLeftArrowRect = { x: px - 35, y: py + drawSize / 2 - 20, w: 30, h: 40 };
+            window.skinRightArrowRect = { x: px + drawSize + 5, y: py + drawSize / 2 - 20, w: 30, h: 40 };
+        }
     }
+}
+
+function drawStoreMenu() {
+    drawMenuBackground();
+    drawMenuTitle('Store');
+
+    // Title / Coins
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 20px Pixelify Sans';
+    ctx.textAlign = 'right';
+    ctx.fillText('Coins: ' + coins, canvas.width - 20, 30);
+
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(20, 100, canvas.width - 40, canvas.height - 180);
+
+    // Render Back Button first to initialize the menuButtons hit array naturally
+    drawTextButtons([{ text: 'Back', action: () => { gameState = 'START_MENU'; selectedMenuIndex = 0; } }], canvas.height - 60, 40);
+
+    // Now manually mount store cards and inject their hitzones
+    const startY = 120;
+    const rowHeight = 70;
+    
+    AVAILABLE_SKINS.forEach((skin, idx) => {
+        const isOwned = ownedSkins.includes(skin.id);
+        const y = startY + idx * rowHeight;
+        const x = 40;
+        const w = canvas.width - 80;
+        const h = 60;
+        
+        // Visual hover check
+        const isHovered = (typeof mouseX !== 'undefined' && mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h);
+
+        // Draw card background
+        ctx.fillStyle = isHovered ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)';
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = isOwned ? '#FFD700' : '#888';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, w, h);
+
+        // Draw sprite animation preview
+        const pTimer = Math.floor(Date.now() / 150) % 4;
+        const spriteName = `${skin.id}_idle_${pTimer}`;
+        if (images[spriteName]) {
+            ctx.drawImage(images[spriteName], x + 10, y + 10, 40, 40);
+        }
+
+        // Draw character name
+        ctx.textAlign = 'left';
+        ctx.font = '20px Pixelify Sans';
+        ctx.fillStyle = 'white';
+        ctx.fillText(skin.name, x + 60, y + 27);
+        
+        // Draw cost / status string
+        ctx.font = 'bold 16px Pixelify Sans';
+        if (isOwned) {
+            ctx.fillStyle = '#00FF00'; // Green text
+            ctx.fillText('Owned', x + 60, y + 47);
+        } else {
+            ctx.fillStyle = coins >= skin.cost ? '#FFD700' : '#FF4444';
+            ctx.fillText(`${skin.cost} Coins`, x + 60, y + 47);
+            
+            // Draw mini coin icon spinner next to the price
+            const uiCFrame = Math.floor(Date.now() / 150) % 4;
+            if (images[`coin_${uiCFrame}`]) {
+                const textWidth = ctx.measureText(`${skin.cost} Coins`).width;
+                ctx.drawImage(images[`coin_${uiCFrame}`], x + 65 + textWidth, y + 34, 14, 14);
+            }
+        }
+
+        // Intercept inputs securely simulating typical drawing behavior
+        menuButtons.push({
+            action: () => {
+                if (!isOwned && coins >= skin.cost) {
+                    coins -= skin.cost;
+                    ownedSkins.push(skin.id);
+                    localStorage.setItem('greatTowerCoins', coins.toString());
+                    localStorage.setItem('greatTowerOwnedSkins', JSON.stringify(ownedSkins));
+                    currentSkinId = skin.id; // Optional: auto equip on purchase
+                    localStorage.setItem('greatTowerCurrentSkin', currentSkinId);
+                }
+            },
+            x: x,
+            y: y,
+            width: w,
+            height: h
+        });
+    });
 }
 
 function drawHighScoresMenu() {
@@ -249,6 +357,8 @@ function drawInstructionsMenu() {
 function drawGame() {
     if (gameState === 'START_MENU') {
         drawMainMenu();
+    } else if (gameState === 'STORE') {
+        drawStoreMenu();
     } else if (gameState === 'HIGH_SCORES') {
         drawHighScoresMenu();
     } else if (gameState === 'OPTIONS') {
@@ -553,7 +663,7 @@ function drawGameplay() {
     // Draw player
     const pTimer = Math.floor(Date.now() / 150) % 4;
     const isRunning = Math.abs(player.velX) > 0.5;
-    const pSpriteName = isRunning ? `knight_run_${pTimer}` : `knight_idle_${pTimer}`;
+    const pSpriteName = isRunning ? `${currentSkinId}_run_${pTimer}` : `${currentSkinId}_idle_${pTimer}`;
 
     // Default size and drawing positions for 32x32 sprite covering a 20x20 hitbox
     const pDrawSizes = 32;

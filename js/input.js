@@ -8,6 +8,26 @@ function handleMenuClick(clientX, clientY) {
     const scaleY = canvas.height / rect.height;
     const x = (clientX - rect.left) * scaleX;
     const y = (clientY - rect.top) * scaleY;
+    
+    // Main Menu Skin Cycling
+    if (gameState === 'START_MENU' && window.skinLeftArrowRect && window.skinRightArrowRect) {
+        let lRect = window.skinLeftArrowRect;
+        if (x >= lRect.x && x <= lRect.x + lRect.w && y >= lRect.y && y <= lRect.y + lRect.h) {
+            let idx = ownedSkins.indexOf(currentSkinId);
+            idx = (idx - 1 + ownedSkins.length) % ownedSkins.length;
+            currentSkinId = ownedSkins[idx];
+            localStorage.setItem('greatTowerCurrentSkin', currentSkinId);
+            return;
+        }
+        let rRect = window.skinRightArrowRect;
+        if (x >= rRect.x && x <= rRect.x + rRect.w && y >= rRect.y && y <= rRect.y + rRect.h) {
+            let idx = ownedSkins.indexOf(currentSkinId);
+            idx = (idx + 1) % ownedSkins.length;
+            currentSkinId = ownedSkins[idx];
+            localStorage.setItem('greatTowerCurrentSkin', currentSkinId);
+            return;
+        }
+    }
 
     for (let i = 0; i < menuButtons.length; i++) {
         let btn = menuButtons[i];

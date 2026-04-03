@@ -25,6 +25,17 @@ let starTimer = 0; // frames of star-power remaining
 let highScores = JSON.parse(localStorage.getItem('greatTowerHighScores')) || [];
 let coins = parseInt(localStorage.getItem('greatTowerCoins')) || 0;
 
+const AVAILABLE_SKINS = [
+    { id: 'knight', name: 'Knight', cost: 0 },
+    { id: 'elf_m', name: 'Elf', cost: 100 },
+    { id: 'lizard_m', name: 'Lizard (M)', cost: 250 },
+    { id: 'lizard_f', name: 'Lizard (F)', cost: 250 },
+    { id: 'angel', name: 'Angel', cost: 500 }
+];
+
+let ownedSkins = JSON.parse(localStorage.getItem('greatTowerOwnedSkins')) || ['knight'];
+let currentSkinId = localStorage.getItem('greatTowerCurrentSkin') || 'knight';
+
 // Platform numbering
 let platformCounter = 0;
 const AUTO_SCROLL_PLATFORM = 200;
