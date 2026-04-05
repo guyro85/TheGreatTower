@@ -1,5 +1,6 @@
 function triggerGameOver() {
     if (gameOver) return;
+    playSound(sfxExplosion);
     gameOver = true;
     gameState = 'GAME_OVER';
 

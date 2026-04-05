@@ -1,20 +1,13 @@
 Features to add:
 
-- in the pause menu there should be an option to press "Instructions" which will lead to a page that describes how to play"
 
-- fix small text font
+- the game ends on platform 1000 when he sees the body of the dwarf's brother and a large demon the ultimately kills the player as well at the top of the tower. (will not be added)
 
-- the platforms should look better and use an asset.
-
-
-- the game ends on platform 1000 when he sees the body of the dwarf's brother and a large demon the ultimately kills the player as well at the top of the tower.
+- edit death sequence 
  
 
 - add the following sound:
-3. player hop sound
 4. spring sound
-5. star collection sound
-6. coin sound
 7. enemy 1 sound
 8. enemy 2 sound
 9. enemy 3 sound
@@ -23,3 +16,8 @@ Features to add:
 12. Demon scene sound
 13. Game over sound
 14. UI button change sound
+
+
+
+https://mod-sale-scout.base44.app/
+https://the-noodle-network.netlify.app/diet

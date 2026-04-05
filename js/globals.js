@@ -109,6 +109,7 @@ const sfxHit = new Audio('usedAssets/hitHurt.wav');
 const sfxJump = new Audio('usedAssets/jump.wav');
 const sfxCoin = new Audio('usedAssets/pickupCoin.wav');
 const sfxPowerUp = new Audio('usedAssets/powerUp.wav');
+const sfxExplosion = new Audio('usedAssets/explosion.wav');
 
 function playSound(snd) {
     if (snd) {
